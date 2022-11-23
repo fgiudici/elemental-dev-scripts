@@ -28,10 +28,6 @@ metadata:
 spec:
   config:
     elemental:
-      registration:
-        no-smbios: false
-        labels:
-          reglabel: "val1"
       install:
         device: /dev/vda
         reboot: true
