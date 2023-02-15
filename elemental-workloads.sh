@@ -60,10 +60,10 @@ spec:
           passwd: $DEFAULT_ROOT_PWD
   machineInventoryLabels:
     $LABEL_KEY: $LABEL_VAL
-    manufacturer: "${System Information/Manufacturer}"
-    productName: "${System Information/Product Name}"
-    serialNumber: "${System Information/Serial Number}"
-    machineUUID: "${System Information/UUID}"
+    manufacturer: "\${System Information/Manufacturer}"
+    productName: "\${System Information/Product Name}"
+    serialNumber: "\${System Information/Serial Number}"
+    machineUUID: "\${System Information/UUID}"
 EOF
 }
 
