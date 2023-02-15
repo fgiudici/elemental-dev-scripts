@@ -170,6 +170,9 @@ EOF
 case ${1} in
 
   check)
+    echo "CLUSTERS:"
+    kubectl get clusters.provisioning.cattle.io --all-namespaces
+    echo ""
     for i in $EO_CRDS; do
         echo "[ $i ]"
         kubectl get $i --all-namespaces
