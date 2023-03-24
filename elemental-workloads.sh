@@ -4,6 +4,7 @@ EO_NS=fleet-default
 EO_CRDS="managedosimages.elemental.cattle.io \
          machineinventories.elemental.cattle.io \
          machineregistrations.elemental.cattle.io \
+         seedimages.elemental.cattle.io \
          managedosversions.elemental.cattle.io \
          managedosversionchannels.elemental.cattle.io \
          machineinventoryselectors.elemental.cattle.io \
@@ -33,6 +34,12 @@ esac
 : ${LABEL_KEY:="cluster-id"}
 : ${LABEL_VAL:="${BASE_NAME}"}
 : ${N_NODES:=1}
+
+: ${BASE_ISO:="Dev"}
+
+if [[ "Dev Stable Staging" =~ (^|[[:space:]])"$BASE_ISO"($|[[:space:]]) ]]; then
+  BASE_ISO="https://download.opensuse.org/repositories/isv:/Rancher:/Elemental:/${BASE_ISO}:/Teal53/media/iso/elemental-teal.x86_64.iso"
+fi
 
 get_resource_list() {
     local res="$1"
@@ -131,6 +138,22 @@ spec:
 EOF
 }
 
+seed_image() {
+  cat << EOF
+apiVersion: elemental.cattle.io/v1beta1
+kind: SeedImage
+metadata:
+  name: $BASE_NAME
+  namespace: fleet-default
+spec:
+  baseImage: $BASE_ISO
+  registrationRef:
+    name: $BASE_NAME
+    namespace: fleet-default
+EOF
+}
+
+
 help() {
   cat << EOF
 Usage:
@@ -140,8 +163,9 @@ Usage:
     check           # prints all the elemental workload resources under all namespaces
     delete          # deletes all the elemental workload resources under the $EO_NS namespace
     create  [notpm] # creates yaml files containing the resources required to deploy an elemental cluster
-    machine [notpm] # creates a MachineResource in the kubernetes cluster (kubectl should be configured)
+    machine [notpm] # creates a MachineRegistration resource in the kubernetes cluster (kubectl should be configured)
     cluster         # creates Cluster and MachineInventoryTemplate resources in the kubernetes cluster (kubectl should be configured)
+    seedimg         # creates a SeedImage resources in the kubernetes cluster (kubectl should be configured)
     getreg          # writes the elemental registration yaml in the current dir
   list of options:
     --notpm         # generates a MachineRegistration with parameters to emulate TPM (NOTPM=true env var will be the same)
@@ -158,8 +182,9 @@ Usage:
     LABEL_VAL             # label val added to the provisioned hosts, used to match the host to the cluster (default: equal to BASE_NAME)
     N_NODES               # desider number of nodes that will be part of the cluster (default: 1)
     NOTPM=true            # generates a MachineRegistration with emulated tpm
+    BASE_ISO              # the URL of the base iso for the generated SeedImage (or Stable/Staging/Dev for OBS ones, default: Dev)
   example:
-    $> CLUSTER_NAME=tornado LABEL_KEY=element elemental-workloads.sh create air
+    $> CLUSTER_NAME=volcano LABEL_KEY=element elemental-workloads.sh create fire
 EOF
 
   exit 0
@@ -188,6 +213,7 @@ case ${1} in
         machine_registration | cat > MachineRegistration-${BASE_NAME}.yaml
     fi
     cluster | cat > Cluster-${BASE_NAME}.yaml
+    seed_image | cat > SeedImage-${BASE_NAME}.yaml
     ;;
 
   delete)
@@ -213,6 +239,10 @@ case ${1} in
 
   cluster)
     cluster | kubectl create  -f -
+    ;;
+
+  seedimg)
+    seed_image | lubectl create -f -
     ;;
 
   getreg)
