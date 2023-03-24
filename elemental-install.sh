@@ -84,18 +84,6 @@ if [ "$ARGS" = "--uninstall" ]; then
   if is_operator_installed; then
     echo "Removing already installed operator"
     helm uninstall -n cattle-elemental-system elemental-operator
-
-    echo "Removing elemental resources:"
-    ELEMENTAL_CRDS="customresourcedefinition.apiextensions.k8s.io/managedosimages.elemental.cattle.io \
-                    customresourcedefinition.apiextensions.k8s.io/machineinventories.elemental.cattle.io \
-                    customresourcedefinition.apiextensions.k8s.io/managedosversions.elemental.cattle.io \
-                    customresourcedefinition.apiextensions.k8s.io/managedosversionchannels.elemental.cattle.io \
-                    customresourcedefinition.apiextensions.k8s.io/machineinventoryselectors.elemental.cattle.io \
-                    customresourcedefinition.apiextensions.k8s.io/machineinventoryselectortemplates.elemental.cattle.io \
-                    customresourcedefinition.apiextensions.k8s.io/machineregistrations.elemental.cattle.io"
-    for crd in $ELEMENTAL_CRDS; do
-      kubectl delete $crd
-    done
   fi
 elif [ -n "$ARGS" ]; then
   help
