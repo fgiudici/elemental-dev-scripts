@@ -217,7 +217,7 @@ case ${1} in
     ;;
 
   delete)
-    for res in machineinventories.elemental.cattle.io machineregistrations.elemental.cattle.io machineinventoryselectortemplates.elemental.cattle.io cluster; do
+    for res in $EO_CRDS cluster; do
         echo "- Delete $res"
         for i in `get_resource_list "$res"`; do
             echo "  . delete $i"

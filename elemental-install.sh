@@ -60,7 +60,7 @@ install_helm_chart() {
   # HELM custom value install:
   # helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} --set image.repository=${EO_REPO} --set seedimage.repository=${SEEDIMG_REPO} --set debug=true
   # our generated helm chart has our custom values already set
-  helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} --set debug=true
+  helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} --set debug=true --set channel.repository="registry.opensuse.org/isv/rancher/elemental/dev/teal53/15.4/rancher/elemental-teal-channel/5.3" --set channel.tag=latest
   set +x
   popd
 }
