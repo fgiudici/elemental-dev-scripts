@@ -61,6 +61,24 @@ spec:
         device: $DEFAULT_MACHINE_DISK
         reboot: true
         debug: true
+EOF
+
+  if [ "$NOTPM" = true ]; then
+    cat << EOF
+      registration:
+        emulate-tpm: true
+        emulate-tpm-seed: -1
+EOF
+
+  elif [ "$REGAUTH" != "" ]; then
+    cat << EOF
+      registration:
+        auth: $REGAUTH
+EOF
+
+  fi
+
+  cat << EOF
     cloud-config:
       users:
         - name: root
@@ -182,6 +200,7 @@ Usage:
     LABEL_VAL             # label val added to the provisioned hosts, used to match the host to the cluster (default: equal to BASE_NAME)
     N_NODES               # desider number of nodes that will be part of the cluster (default: 1)
     NOTPM=true            # generates a MachineRegistration with emulated tpm
+    REGAUTH               # alternative authentication to use (instead of tpm); possible values: "mac", "sys-uuid"
     BASE_ISO              # the URL of the base iso for the generated SeedImage (or Stable/Staging/Dev for OBS ones, default: Dev)
   example:
     $> CLUSTER_NAME=volcano LABEL_KEY=element elemental-workloads.sh create fire
@@ -207,11 +226,7 @@ case ${1} in
     ;;
 
   create)
-    if [ "$NOTPM" == "true" ]; then
-        machine_registration_no_tpm | cat > MachineRegistration-${BASE_NAME}.yaml
-    else
-        machine_registration | cat > MachineRegistration-${BASE_NAME}.yaml
-    fi
+    machine_registration | cat > MachineRegistration-${BASE_NAME}.yaml
     cluster | cat > Cluster-${BASE_NAME}.yaml
     seed_image | cat > SeedImage-${BASE_NAME}.yaml
     ;;
@@ -227,11 +242,7 @@ case ${1} in
     ;;
 
   machine)
-    if [ "$NOTPM" = "true" ]; then
-        machine_registration_no_tpm | kubectl create -f -
-    else
-        machine_registration | kubectl create -f -
-    fi
+    machine_registration | kubectl create -f -
     sleep 1
     REGISTRATION_URL=`kubectl get machineregistration -n fleet-default ${BASE_NAME} -ojsonpath="{.status.registrationURL}"`
     curl -k $REGISTRATION_URL | tee reg-${BASE_NAME}.yaml
