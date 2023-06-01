@@ -13,6 +13,7 @@ fi
 
 : ${CFG_ROOT_PWD:="elemental"}
 : ${CFG_SSH_KEY:=""}
+: ${CFG_HOSTNAME:="leapmicro"}
 : ${VM_STORE:="/var/lib/libvirt/images"}
 : ${VM_MEMORY:="4096"}
 : ${VM_CORES:="2"}
@@ -67,19 +68,23 @@ passwd:
     users:
       - name: root
         password_hash: "$ROOT_HASHED_PWD"
+storage:
+  files:
+    - path: /etc/hostname
+      contents:
+        inline: "$CFG_HOSTNAME"
+      mode: 0644
+      overwrite: true
 EOF
 
   if [ -n "$CFG_SSH_KEY" ]; then
     cat << EOF
-storage:
-  files:
     - path: /root/.ssh/authorized_keys
       contents:
         inline: "$CFG_SSH_KEY"
       mode: 0600
       overwrite: true
 EOF
-
   fi
 }
 
@@ -192,6 +197,7 @@ Usage:
                         # set to 'skip' to skip importing env variable declarations from any file
     INSTALL_K3S_EXEC    # k3s installation options (default: 'server --write-kubeconfig-mode=644')
     INSTALL_K3S_VERSION # k3s installation version (default: 'v1.24.10+k3s1')
+    CFG_HOSTNAME        # provisioned hostname (default: 'leapmicro')
     CFG_SSH_KEY         # the authorized ssh public key for remote access (default: not set)
     CFG_ROOT_PWD        # the root password of the installed system (default: 'elemental')
     VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
