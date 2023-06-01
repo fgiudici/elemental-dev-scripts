@@ -11,8 +11,8 @@ if [ "$ENVC" != "skip" -a -f "${HOME}/.elemental/config" ]; then
   . "$ENVC"
 fi
 
-: ${ROOT_PWD:="elemental"}
-: ${SSH_KEY:=""}
+: ${CFG_ROOT_PWD:="elemental"}
+: ${CFG_SSH_KEY:=""}
 : ${VM_STORE:="/var/lib/libvirt/images"}
 : ${VM_MEMORY:="4096"}
 : ${VM_CORES:="2"}
@@ -57,7 +57,7 @@ qcow_prep() {
 }
 
 write_ignition() {
-  ROOT_HASHED_PWD=$(openssl passwd -6 "$ROOT_PWD") || error
+  ROOT_HASHED_PWD=$(openssl passwd -6 "$CFG_ROOT_PWD") || error
 
   cat << EOF
 variant: fcos
@@ -69,13 +69,13 @@ passwd:
         password_hash: "$ROOT_HASHED_PWD"
 EOF
 
-  if [ -n "$SSH_KEY" ]; then
+  if [ -n "$CFG_SSH_KEY" ]; then
     cat << EOF
 storage:
   files:
     - path: /root/.ssh/authorized_keys
       contents:
-        inline: "$SSH_KEY"
+        inline: "$CFG_SSH_KEY"
       mode: 0600
       overwrite: true
 EOF
@@ -192,7 +192,8 @@ Usage:
                         # set to 'skip' to skip importing env variable declarations from any file
     INSTALL_K3S_EXEC    # k3s installation options (default: 'server --write-kubeconfig-mode=644')
     INSTALL_K3S_VERSION # k3s installation version (default: 'v1.24.10+k3s1')
-    ROOT_PWD            # the root password of the installed system (default: 'elemental')
+    CFG_SSH_KEY         # the authorized ssh public key for remote access (default: not set)
+    CFG_ROOT_PWD        # the root password of the installed system (default: 'elemental')
     VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
     VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '2')
     VM_GRAPHICS         # graphical display configuration for the leapmicro K3s VM (default: 'spice')
