@@ -4,7 +4,15 @@ OUTPUT_DIR="artifacts"
 DISTRO_NAME="openSUSE-Leap-Micro.x86_64-Default"
 DISTRO_URL_BASE="https://download.opensuse.org/distribution/leap-micro/5.4/appliances/"
 CONF_IMG="ignition.img"
+
+# you can set your custom vars permanently in $HOME/.elemental/config
+: ${ENVC:="$HOME/.elemental/config"}
+if [ "$ENVC" != "skip" -a -f "${HOME}/.elemental/config" ]; then
+  . "$ENVC"
+fi
+
 : ${ROOT_PWD:="elemental"}
+: ${SSH_KEY:=""}
 : ${VM_STORE:="/var/lib/libvirt/images"}
 : ${VM_MEMORY:="4096"}
 : ${VM_CORES:="2"}
@@ -60,6 +68,19 @@ passwd:
       - name: root
         password_hash: "$ROOT_HASHED_PWD"
 EOF
+
+  if [ -n "$SSH_KEY" ]; then
+    cat << EOF
+storage:
+  files:
+    - path: /root/.ssh/authorized_keys
+      contents:
+        inline: "$SSH_KEY"
+      mode: 0600
+      overwrite: true
+EOF
+
+  fi
 }
 
 write_combustion() {
@@ -167,6 +188,8 @@ Usage:
                 # if the artifacts folder is not found, calls "artifacts" first to generate the required disks
     delete      # delete the generated artifacts
   supported env vars:
+    ENVC                # the environment config file to be imported if present (default: '\$HOME/.elemental/config)
+                        # set to 'skip' to skip importing env variable declarations from any file
     INSTALL_K3S_EXEC    # k3s installation options (default: 'server --write-kubeconfig-mode=644')
     INSTALL_K3S_VERSION # k3s installation version (default: 'v1.24.10+k3s1')
     ROOT_PWD            # the root password of the installed system (default: 'elemental')
