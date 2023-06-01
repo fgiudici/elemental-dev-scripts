@@ -242,7 +242,11 @@ case ${1} in
     fi
 
     [ ! -f "$OUTPUT_DIR/$QEMU_IMG" ] && qcow_prep
-    [ ! -f "$OUTPUT_DIR/$CONF_IMG" ] && ignition_volume_prep
+    if [ ! -f "$OUTPUT_DIR/$CONF_IMG" ]; then
+      ignition_volume_prep
+    else
+      echo "WARNING: found '$OUTPUT_DIR/$CONF_IMG', skip rebuild of ignition/combustion volume"
+    fi
 
     create_vm
     ;;
