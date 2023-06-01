@@ -36,27 +36,6 @@ error() {
   exit -1
 }
 
-qcow_prep() {
-  if [ ! -f "$QEMU_IMG" ]; then
-
-    if [ ! -f "$DISTRO_RAW" ]; then
-
-      if [ ! -f "$DISTRO_RAWXZ" ]; then
-        echo "* download leapmicro"
-        wget "$DISTRO_FULL_URL" || error
-      fi
-
-      echo "* decompress raw image"
-      xz -d "$DISTRO_RAWXZ" || error
-    fi
-
-    echo "* convert to qcow2 img"
-    qemu-img convert -f raw -O qcow2 "$DISTRO_RAW" "${OUTPUT_DIR}/${QEMU_IMG}" || error
-  fi
-  echo "* qcow image ready: $QEMU_IMG"
-  echo
-}
-
 write_ignition() {
   ROOT_HASHED_PWD=$(openssl passwd -6 "$CFG_ROOT_PWD") || error
 
@@ -180,6 +159,54 @@ ignition_volume_prep_cleanup() {
   fi
 }
 
+qcow_prep() {
+  if [ ! -f "$QEMU_IMG" ]; then
+
+    if [ ! -f "$DISTRO_RAW" ]; then
+
+      if [ ! -f "$DISTRO_RAWXZ" ]; then
+        echo "* download leapmicro"
+        wget "$DISTRO_FULL_URL" || error
+      fi
+
+      echo "* decompress raw image"
+      xz -d "$DISTRO_RAWXZ" || error
+    fi
+
+    echo "* convert to qcow2 img"
+    qemu-img convert -f raw -O qcow2 "$DISTRO_RAW" "${OUTPUT_DIR}/${QEMU_IMG}" || error
+  fi
+  echo "* qcow image ready: $QEMU_IMG"
+  echo
+}
+
+create_vm() {
+  local uuid=$(uuidgen) || error
+  local vmdisk="${uuid}-leapmicro.qcow2"
+  local vmconf="${uuid}-config.img"
+
+  sudo cp -a "${OUTPUT_DIR}/${QEMU_IMG}" "${VM_STORE}/${vmdisk}" || error
+  sudo cp -a "${OUTPUT_DIR}/${CONF_IMG}" "${VM_STORE}/${vmconf}" || error
+
+  sudo virt-install \
+    -n "leapmicro-$uuid" --osinfo=slem5.3 --memory="$VM_MEMORY" --vcpus="$VM_CORES" \
+    --disk path="${VM_STORE}/${vmdisk}",bus=virtio --import \
+    --disk path="${VM_STORE}/${vmconf}" \
+    --graphics "$VM_GRAPHICS" \
+    --autoconsole "$VM_AUTOCONSOLE"
+}
+
+get_kubeconfig() {
+  local ip="$1"
+
+  scp root@$ip:/etc/rancher/k3s/k3s.yaml ./ > /dev/null || error
+  sed -i "s/127.0.0.1/${ip}/g" k3s.yaml || error
+  chmod 600 k3s.yaml || error
+  echo "DONE: k3s.yaml retrieved successfully"
+  echo "      you may want to:"
+  echo "export KUBECONFIG=$PWD/k3s.yaml"
+}
+
 help() {
   cat << EOF
 Usage:
@@ -210,33 +237,6 @@ Usage:
 EOF
 
   exit 0
-}
-
-create_vm() {
-  local uuid=$(uuidgen) || error
-  local vmdisk="${uuid}-leapmicro.qcow2"
-  local vmconf="${uuid}-config.img"
-
-  sudo cp -a "${OUTPUT_DIR}/${QEMU_IMG}" "${VM_STORE}/${vmdisk}" || error
-  sudo cp -a "${OUTPUT_DIR}/${CONF_IMG}" "${VM_STORE}/${vmconf}" || error
-
-  sudo virt-install \
-    -n "leapmicro-$uuid" --osinfo=slem5.3 --memory="$VM_MEMORY" --vcpus="$VM_CORES" \
-    --disk path="${VM_STORE}/${vmdisk}",bus=virtio --import \
-    --disk path="${VM_STORE}/${vmconf}" \
-    --graphics "$VM_GRAPHICS" \
-    --autoconsole "$VM_AUTOCONSOLE"
-}
-
-get_kubeconfig() {
-  local ip="$1"
-
-  scp root@$ip:/etc/rancher/k3s/k3s.yaml ./ > /dev/null || error
-  sed -i "s/127.0.0.1/${ip}/g" k3s.yaml || error
-  chmod 600 k3s.yaml || error
-  echo "DONE: k3s.yaml retrieved successfully"
-  echo "      you may want to:"
-  echo "export KUBECONFIG=$PWD/k3s.yaml"
 }
 
 case ${1} in
