@@ -15,6 +15,7 @@ fi
 : ${CFG_SSH_KEY:=""}
 : ${CFG_HOSTNAME:="leapmicro"}
 : ${VM_STORE:="/var/lib/libvirt/images"}
+: ${VM_DISKSIZE:="30G"}
 : ${VM_MEMORY:="4096"}
 : ${VM_CORES:="2"}
 : ${VM_GRAPHICS:="spice"}
@@ -175,6 +176,7 @@ qcow_prep() {
 
     echo "* convert to qcow2 img"
     qemu-img convert -f raw -O qcow2 "$DISTRO_RAW" "${OUTPUT_DIR}/${QEMU_IMG}" || error
+    qemu-img resize "${OUTPUT_DIR}/${QEMU_IMG}" "$VM_DISKSIZE"
   fi
   echo "* qcow image ready: $QEMU_IMG"
   echo
@@ -231,6 +233,7 @@ Usage:
     CFG_ROOT_PWD        # the root password of the installed system (default: 'elemental')
     VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
     VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '2')
+    VM_DISKSIZE         # desired storage size of the leapmicro K3s VM (default: '30G')
     VM_GRAPHICS         # graphical display configuration for the leapmicro K3s VM (default: 'spice')
     VM_MEMORY           # amount of RAM assigned to the leapmicro K3s VM in MiB (default: '4096')
     VM_STORE            # path where to put the disks for the leapmicro K3s VM (default: 'var/lib/libvirt/images')
