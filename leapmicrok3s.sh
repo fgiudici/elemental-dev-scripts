@@ -20,7 +20,7 @@ fi
 : ${VM_GRAPHICS:="spice"}
 : ${VM_AUTOCONSOLE:="text"}
 : ${INSTALL_K3S_EXEC:="server --write-kubeconfig-mode=644"}
-: ${INSTALL_K3S_VERSION:="v1.24.10+k3s1"}
+: ${INSTALL_K3S_VERSION:="v1.25.10+k3s1"}
 
 DISTRO_RAW="${DISTRO_NAME}.raw"
 DISTRO_RAWXZ="${DISTRO_RAW}.xz"
@@ -186,12 +186,14 @@ Usage:
   ${0//*\/} CMD
 
   list of commands (CMD):
-    artifacts   # downloads leapmicro release and creates a qcow2 image and ignite/combustion config volume (ignite.img)
-                # if config files are not found ("config" was not called before), it generates them first
-    config      # just creates ignite (ignite.fcc) and combustion (script) source config files (warning: overwrites present files)
-    create      # creates a VM backed up by the disks created by "artifacts", with VM_MEMORY memory and VM_CORES vcpus.
-                # if the artifacts folder is not found, calls "artifacts" first to generate the required disks
-    delete      # delete the generated artifacts
+    artifacts         # downloads leapmicro release and creates a qcow2 image and ignite/combustion config volume (ignite.img)
+                      # if config files are not found ("config" was not called before), it generates them first
+    config            # just creates ignite (ignite.fcc) and combustion (script) source config files (warning: overwrites present files)
+    create            # creates a VM backed up by the disks created by "artifacts", with VM_MEMORY memory and VM_CORES vcpus.
+                      # if the artifacts folder is not found, calls "artifacts" first to generate the required disks
+    delete [all]      # delete the generated artifacts; with 'all' deletes also config files
+    getkubeconf <IP>  # get the kubeconfig file from a k3s host identified by the <IP> ip address
+
   supported env vars:
     ENVC                # the environment config file to be imported if present (default: '\$HOME/.elemental/config)
                         # set to 'skip' to skip importing env variable declarations from any file
@@ -224,6 +226,16 @@ create_vm() {
     --disk path="${VM_STORE}/${vmconf}" \
     --graphics "$VM_GRAPHICS" \
     --autoconsole "$VM_AUTOCONSOLE"
+}
+
+get_kubeconfig() {
+  local ip="$1"
+
+  scp root@$ip:/etc/rancher/k3s/k3s.yaml ./ > /dev/null || error
+  sed -i "s/127.0.0.1/${ip}/g" k3s.yaml || error
+  echo "DONE: k3s.yaml retrieved successfully"
+  echo "      you may want to:"
+  echo "export KUBECONFIG=$PWD/k3s.yaml"
 }
 
 case ${1} in
@@ -260,8 +272,18 @@ case ${1} in
 
   delete)
     rm -rf "$OUTPUT_DIR"
+    if [ "${2}" = "all" ]; then
+      rm -rf config.fcc script
+    fi
     ;;
 
+  getkubeconf|getk)
+    IP=${2}
+    if [ -z "$IP" ]; then
+      error "ip address required but missing"
+    fi
+    get_kubeconfig "$IP"
+    ;;
   *)
     help
     ;;
