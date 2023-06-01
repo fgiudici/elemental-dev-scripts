@@ -22,6 +22,7 @@ fi
 : ${VM_AUTOCONSOLE:="text"}
 : ${INSTALL_K3S_EXEC:="server --write-kubeconfig-mode=644"}
 : ${INSTALL_K3S_VERSION:="v1.25.10+k3s1"}
+: ${RANCHER_PWD:="rancher4elemental"}
 
 DISTRO_RAW="${DISTRO_NAME}.raw"
 DISTRO_RAWXZ="${DISTRO_RAW}.xz"
@@ -209,6 +210,37 @@ get_kubeconfig() {
   echo "export KUBECONFIG=$PWD/k3s.yaml"
 }
 
+deploy_rancher() {
+  local ip=$(kubectl get nodes -o=jsonpath='{.items[0].metadata.annotations.k3s\.io/internal-ip}') || error
+  [ -z "$ip" ] && error "cannot retrieve cluster node ip"
+
+  echo "* add helm repos"
+  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest || error
+  helm repo add jetstack https://charts.jetstack.io || error
+  helm repo update || error
+
+  echo "* deploy cert-manager"
+  kubectl create namespace cattle-system
+
+  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml || error
+
+  helm install cert-manager jetstack/cert-manager \
+    --namespace cert-manager \
+    --create-namespace \
+    --version v1.11.0 || error
+
+  echo "* deploy rancher"
+  # For Kubernetes v1.25 or later, set global.cattle.psp.enabled to false.
+  helm install rancher rancher-latest/rancher \
+  --namespace cattle-system \
+  --set hostname=${ip}.sslip.io \
+  --set replicas=1 \
+  --set global.cattle.psp.enabled=false \
+  --set bootstrapPassword="$RANCHER_PWD" || error
+
+  echo "Rancher URL: https://${ip}.sslip.io"
+}
+
 help() {
   cat << EOF
 Usage:
@@ -222,6 +254,7 @@ Usage:
                       # if the artifacts folder is not found, calls "artifacts" first to generate the required disks
     delete [all]      # delete the generated artifacts; with 'all' deletes also config files
     getkubeconf <IP>  # get the kubeconfig file from a k3s host identified by the <IP> ip address
+    deployrancher     # install Rancher via Helm chart (requires helm binary already installed)
 
   supported env vars:
     ENVC                # the environment config file to be imported if present (default: '\$HOME/.elemental/config)
@@ -231,6 +264,7 @@ Usage:
     CFG_HOSTNAME        # provisioned hostname (default: 'leapmicro')
     CFG_SSH_KEY         # the authorized ssh public key for remote access (default: not set)
     CFG_ROOT_PWD        # the root password of the installed system (default: 'elemental')
+    RANCHER_PWD         # the admin password for rancher deployment (default: 'rancher4elemental')
     VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
     VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '2')
     VM_DISKSIZE         # desired storage size of the leapmicro K3s VM (default: '30G')
@@ -288,6 +322,11 @@ case ${1} in
     fi
     get_kubeconfig "$IP"
     ;;
+
+  deployrancher|rancher)
+    deploy_rancher
+    ;;
+
   *)
     help
     ;;
