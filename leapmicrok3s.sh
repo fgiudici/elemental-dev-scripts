@@ -233,6 +233,7 @@ get_kubeconfig() {
 
   scp root@$ip:/etc/rancher/k3s/k3s.yaml ./ > /dev/null || error
   sed -i "s/127.0.0.1/${ip}/g" k3s.yaml || error
+  chmod 600 k3s.yaml || error
   echo "DONE: k3s.yaml retrieved successfully"
   echo "      you may want to:"
   echo "export KUBECONFIG=$PWD/k3s.yaml"
