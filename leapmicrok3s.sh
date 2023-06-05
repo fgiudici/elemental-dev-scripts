@@ -17,6 +17,7 @@ fi
 : ${VM_STORE:="/var/lib/libvirt/images"}
 : ${VM_DISKSIZE:="30G"}
 : ${VM_MEMORY:="4096"}
+: ${VM_NETWORK:="default"}
 : ${VM_CORES:="2"}
 : ${VM_GRAPHICS:="spice"}
 : ${VM_AUTOCONSOLE:="text"}
@@ -196,6 +197,7 @@ create_vm() {
     --disk path="${VM_STORE}/${vmdisk}",bus=virtio --import \
     --disk path="${VM_STORE}/${vmconf}" \
     --graphics "$VM_GRAPHICS" \
+    --network network="$VM_NETWORK" \
     --autoconsole "$VM_AUTOCONSOLE"
 }
 
@@ -270,6 +272,7 @@ Usage:
     VM_DISKSIZE         # desired storage size of the leapmicro K3s VM (default: '30G')
     VM_GRAPHICS         # graphical display configuration for the leapmicro K3s VM (default: 'spice')
     VM_MEMORY           # amount of RAM assigned to the leapmicro K3s VM in MiB (default: '4096')
+    VM_NETWORK          # virtual network (default: 'default')
     VM_STORE            # path where to put the disks for the leapmicro K3s VM (default: 'var/lib/libvirt/images')
 EOF
 
