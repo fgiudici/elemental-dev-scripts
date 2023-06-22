@@ -24,6 +24,7 @@ fi
 : ${INSTALL_K3S_EXEC:="server --write-kubeconfig-mode=644"}
 : ${INSTALL_K3S_VERSION:="v1.25.10+k3s1"}
 : ${RANCHER_PWD:="rancher4elemental"}
+: ${REMOTE_KVM:=""}
 
 DISTRO_RAW="${DISTRO_NAME}.raw"
 DISTRO_RAWXZ="${DISTRO_RAW}.xz"
@@ -188,11 +189,18 @@ create_vm() {
   local uuid=$(uuidgen) || error
   local vmdisk="${uuid}-leapmicro.qcow2"
   local vmconf="${uuid}-config.img"
+  local remote_option=""
 
-  sudo cp -a "${OUTPUT_DIR}/${QEMU_IMG}" "${VM_STORE}/${vmdisk}" || error
-  sudo cp -a "${OUTPUT_DIR}/${CONF_IMG}" "${VM_STORE}/${vmconf}" || error
+  if [ -z "$REMOTE_KVM" ]; then
+    sudo cp -a "${OUTPUT_DIR}/${QEMU_IMG}" "${VM_STORE}/${vmdisk}" || error
+    sudo cp -a "${OUTPUT_DIR}/${CONF_IMG}" "${VM_STORE}/${vmconf}" || error
+  else
+    scp "${OUTPUT_DIR}/${QEMU_IMG}" "root@${REMOTE_KVM}:${VM_STORE}/${vmdisk}" || error
+    scp "${OUTPUT_DIR}/${CONF_IMG}" "root@${REMOTE_KVM}:${VM_STORE}/${vmconf}" || error
+    remote_option="--connect qemu+ssh://root@${REMOTE_KVM}/system"
+  fi
 
-  sudo virt-install \
+  sudo virt-install "$remote_option" \
     -n "leapmicro-$uuid" --osinfo=slem5.3 --memory="$VM_MEMORY" --vcpus="$VM_CORES" \
     --disk path="${VM_STORE}/${vmdisk}",bus=virtio --import \
     --disk path="${VM_STORE}/${vmconf}" \
@@ -267,6 +275,7 @@ Usage:
     CFG_SSH_KEY         # the authorized ssh public key for remote access (default: not set)
     CFG_ROOT_PWD        # the root password of the installed system (default: 'elemental')
     RANCHER_PWD         # the admin password for rancher deployment (default: 'rancher4elemental')
+    REMOTE_KVM          # the hostname/ip address of the KVM host if not using the local one (requires root access)
     VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
     VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '2')
     VM_DISKSIZE         # desired storage size of the leapmicro K3s VM (default: '30G')
