@@ -15,7 +15,7 @@ fi
 : ${CFG_SSH_KEY:=""}
 : ${CFG_HOSTNAME:="leapmicro"}
 : ${VM_STORE:="/var/lib/libvirt/images"}
-: ${VM_DISKSIZE:="30G"}
+: ${VM_DISKSIZE:="30"}
 : ${VM_MEMORY:="4096"}
 : ${VM_NETWORK:="default"}
 : ${VM_CORES:="2"}
@@ -27,6 +27,7 @@ fi
 : ${RANCHER_VER:=""}
 : ${REMOTE_KVM:=""}
 
+VM_DISKSIZE="${VM_DISKSIZE}G"
 DISTRO_RAW="${DISTRO_NAME}.raw"
 DISTRO_RAWXZ="${DISTRO_RAW}.xz"
 QEMU_IMG="${DISTRO_NAME}.qcow2"
@@ -198,7 +199,7 @@ create_vm() {
   else
     scp "${OUTPUT_DIR}/${QEMU_IMG}" "root@${REMOTE_KVM}:${VM_STORE}/${vmdisk}" || error
     scp "${OUTPUT_DIR}/${CONF_IMG}" "root@${REMOTE_KVM}:${VM_STORE}/${vmconf}" || error
-    remote_option="--connect qemu+ssh://root@${REMOTE_KVM}/system"
+    remote_option="--connect=qemu+ssh://root@${REMOTE_KVM}/system"
   fi
 
   sudo virt-install "$remote_option" \
@@ -283,7 +284,7 @@ Usage:
     REMOTE_KVM          # the hostname/ip address of the KVM host if not using the local one (requires root access)
     VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
     VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '2')
-    VM_DISKSIZE         # desired storage size of the leapmicro K3s VM (default: '30G')
+    VM_DISKSIZE         # desired storage size in GB of the leapmicro K3s VM (default: '30')
     VM_GRAPHICS         # graphical display configuration for the leapmicro K3s VM (default: 'spice')
     VM_MEMORY           # amount of RAM assigned to the leapmicro K3s VM in MiB (default: '4096')
     VM_NETWORK          # virtual network (default: 'default')
