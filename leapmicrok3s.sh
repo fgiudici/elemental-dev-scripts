@@ -202,7 +202,7 @@ create_vm() {
     remote_option="--connect=qemu+ssh://root@${REMOTE_KVM}/system"
   fi
 
-  sudo virt-install "$remote_option" \
+  sudo virt-install $remote_option \
     -n "leapmicro-$uuid" --osinfo=slem5.3 --memory="$VM_MEMORY" --vcpus="$VM_CORES" \
     --disk path="${VM_STORE}/${vmdisk}",bus=virtio --import \
     --disk path="${VM_STORE}/${vmconf}" \
