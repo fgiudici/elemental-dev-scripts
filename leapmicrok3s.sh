@@ -1,9 +1,8 @@
 #!/bin/sh
 
 OUTPUT_DIR="artifacts"
-DISTRO_NAME="openSUSE-Leap-Micro.x86_64-Default"
-DISTRO_URL_BASE="https://download.opensuse.org/distribution/leap-micro/5.4/appliances/"
 CONF_IMG="ignition.img"
+DOWNLOAD_QCOW=false
 
 # you can set your custom vars permanently in $HOME/.elemental/config
 : ${ENVC:="$HOME/.elemental/config"}
@@ -11,9 +10,12 @@ if [ "$ENVC" != "skip" -a -f "${HOME}/.elemental/config" ]; then
   . "$ENVC"
 fi
 
+
+: ${MICRO_OS:=leapmicro}
+: ${SKIP_K3S:=false}
 : ${CFG_ROOT_PWD:="elemental"}
 : ${CFG_SSH_KEY:=""}
-: ${CFG_HOSTNAME:="leapmicro"}
+: ${CFG_HOSTNAME:="$MICRO_OS"}
 : ${VM_STORE:="/var/lib/libvirt/images"}
 : ${VM_DISKSIZE:="30"}
 : ${VM_MEMORY:="4096"}
@@ -26,6 +28,22 @@ fi
 : ${RANCHER_PWD:="rancher4elemental"}
 : ${RANCHER_VER:=""}
 : ${REMOTE_KVM:=""}
+
+case "$MICRO_OS" in
+  leapmicro)
+    DISTRO_NAME="openSUSE-Leap-Micro.x86_64-Default"
+    DISTRO_URL_BASE="https://download.opensuse.org/distribution/leap-micro/5.4/appliances/"
+    ;;
+  microOS|microos)
+    DISTRO_NAME="openSUSE-MicroOS.x86_64-ContainerHost-kvm-and-xen"
+    DISTRO_URL_BASE="https://download.opensuse.org/tumbleweed/appliances/"
+    DOWNLOAD_QCOW=true
+    ;;
+  *)
+    echo ERR: parameter \"$MICRO_OS\" is not a valid OS
+    exit -1
+    ;;
+esac
 
 VM_DISKSIZE="${VM_DISKSIZE}G"
 DISTRO_RAW="${DISTRO_NAME}.raw"
@@ -74,6 +92,11 @@ EOF
 }
 
 write_combustion() {
+  if $SKIP_K3S; then
+    echo ""
+    return
+  fi
+
   cat << EOF
 #!/bin/sh
 # combustion: network
@@ -167,29 +190,33 @@ ignition_volume_prep_cleanup() {
 
 qcow_prep() {
   if [ ! -f "$QEMU_IMG" ]; then
+    if $DOWNLOAD_QCOW; then
+      echo "* download '$QEMU_IMG'"
+      wget "${DISTRO_URL_BASE}${QEMU_IMG}" || error
+    else
+      if [ ! -f "$DISTRO_RAW" ]; then
 
-    if [ ! -f "$DISTRO_RAW" ]; then
+        if [ ! -f "$DISTRO_RAWXZ" ]; then
+          echo "* download '$DISTRO_RAWXZ'"
+          wget "$DISTRO_FULL_URL" || error
+        fi
 
-      if [ ! -f "$DISTRO_RAWXZ" ]; then
-        echo "* download leapmicro"
-        wget "$DISTRO_FULL_URL" || error
+        echo "* decompress raw image"
+        xz -d "$DISTRO_RAWXZ" || error
       fi
 
-      echo "* decompress raw image"
-      xz -d "$DISTRO_RAWXZ" || error
+      echo "* convert to qcow2 img"
+      qemu-img convert -f raw -O qcow2 "$DISTRO_RAW" "${QEMU_IMG}" || error
     fi
-
-    echo "* convert to qcow2 img"
-    qemu-img convert -f raw -O qcow2 "$DISTRO_RAW" "${OUTPUT_DIR}/${QEMU_IMG}" || error
-    qemu-img resize "${OUTPUT_DIR}/${QEMU_IMG}" "$VM_DISKSIZE"
   fi
+  cp "${QEMU_IMG}" "${OUTPUT_DIR}/${QEMU_IMG}"
+  qemu-img resize "${OUTPUT_DIR}/${QEMU_IMG}" "$VM_DISKSIZE"
   echo "* qcow image ready: $QEMU_IMG"
-  echo
 }
 
 create_vm() {
   local uuid=$(uuidgen) || error
-  local vmdisk="${uuid}-leapmicro.qcow2"
+  local vmdisk="${uuid}-${MICRO_OS}.qcow2"
   local vmconf="${uuid}-config.img"
   local remote_option=""
 
@@ -203,7 +230,7 @@ create_vm() {
   fi
 
   sudo virt-install $remote_option \
-    -n "leapmicro-$uuid" --osinfo=slem5.3 --memory="$VM_MEMORY" --vcpus="$VM_CORES" \
+    -n "${MICRO_OS}-$uuid" --osinfo=slem5.3 --memory="$VM_MEMORY" --vcpus="$VM_CORES" \
     --disk path="${VM_STORE}/${vmdisk}",bus=virtio --import \
     --disk path="${VM_STORE}/${vmconf}" \
     --graphics "$VM_GRAPHICS" \
@@ -274,6 +301,8 @@ Usage:
   supported env vars:
     ENVC                # the environment config file to be imported if present (default: '\$HOME/.elemental/config)
                         # set to 'skip' to skip importing env variable declarations from any file
+    MICRO_OS            # OS to install, 'leapmicro' or 'microOS' (default: 'leapmicro')
+    SKIP_K3S            # boolean, skip k3s installation on 'true' (default: 'false')
     INSTALL_K3S_EXEC    # k3s installation options (default: 'server --write-kubeconfig-mode=644')
     INSTALL_K3S_VERSION # k3s installation version (default: 'v1.24.10+k3s1')
     CFG_HOSTNAME        # provisioned hostname (default: 'leapmicro')
