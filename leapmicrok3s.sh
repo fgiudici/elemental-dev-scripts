@@ -1,12 +1,13 @@
 #!/bin/sh
 
+VERSION="0.2.0"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
 
 # you can set your custom vars permanently in $HOME/.elemental/config
 : ${ENVC:="$HOME/.elemental/config"}
-if [ "$ENVC" != "skip" -a -f "${HOME}/.elemental/config" ]; then
+if [ "$ENVC" != "skip" -a -f "$ENVC" ]; then
   . "$ENVC"
 fi
 
