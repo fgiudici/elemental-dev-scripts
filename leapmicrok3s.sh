@@ -1,10 +1,10 @@
 #!/bin/sh
 
-VERSION="0.2.1"
+VERSION="0.2.2"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
-TMP_BUTANE_CONFIG="config.fcc"
+TMP_BUTANE_CONFIG="config.bu"
 TMP_IGNITION_CONFIG="config.ign"
 TMP_COMBUSTION_SCRIPT="script"
 
