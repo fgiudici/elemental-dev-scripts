@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="0.2.0"
+VERSION="0.2.1"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
@@ -26,8 +26,9 @@ fi
 : ${VM_AUTOCONSOLE:="text"}
 : ${INSTALL_K3S_EXEC:="server --write-kubeconfig-mode=644"}
 : ${INSTALL_K3S_VERSION:="v1.25.10+k3s1"}
-: ${RANCHER_PWD:="rancher4elemental"}
+: ${RANCHER_PWD:="elemental"}
 : ${RANCHER_VER:=""}
+: ${RANCHER_REPO:="latest"}
 : ${REMOTE_KVM:=""}
 
 case "$MICRO_OS" in
@@ -274,7 +275,7 @@ deploy_rancher() {
   local rancherOpts="--namespace cattle-system"
   [ -n "$RANCHER_VER" ] && rancherOpts="$rancherOpts --version $RANCHER_VER"
 
-  helm install rancher rancher-latest/rancher \
+  helm install rancher rancher-${RANCHER_REPO}/rancher \
   $rancherOpts \
   --set hostname=${ip}.sslip.io \
   --set replicas=1 \
@@ -311,6 +312,7 @@ Usage:
     CFG_ROOT_PWD        # the root password of the installed system (default: 'elemental')
     RANCHER_PWD         # the admin password for rancher deployment (default: 'rancher4elemental')
     RANCHER_VER         # Rancher version to install (default picks up the latest)
+    RANCHER_REPO        # Rancher helm chart repo to pick rancher from (default 'lastest')
     REMOTE_KVM          # the hostname/ip address of the KVM host if not using the local one (requires root access)
     VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
     VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '2')
