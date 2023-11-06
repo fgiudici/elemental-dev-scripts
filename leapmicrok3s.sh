@@ -4,6 +4,9 @@ VERSION="0.2.1"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
+TMP_BUTANE_CONFIG="config.fcc"
+TMP_IGNITION_CONFIG="config.ign"
+TMP_COMBUSTION_SCRIPT="script"
 
 # you can set your custom vars permanently in $HOME/.elemental/config
 : ${ENVC:="$HOME/.elemental/config"}
@@ -133,8 +136,8 @@ EOF
 }
 
 create_config_files() {
-  write_ignition > config.fcc
-  write_combustion > script
+  write_ignition > "$TMP_BUTANE_CONFIG"
+  write_combustion > "$TMP_COMBUSTION_SCRIPT"
 }
 
 ignition_volume_prep() {
@@ -156,21 +159,21 @@ ignition_volume_prep() {
   mkdir tmpmount
   sudo mount $LOOPDEV tmpmount
 
-  if [ ! -f config.fcc ]; then
-    write_ignition > config.fcc
-    [ -f config.fcc ] || error
+  if [ ! -f "$TMP_BUTANE_CONFIG" ]; then
+    write_ignition > "$TMP_BUTANE_CONFIG"
+    [ -f "$TMP_BUTANE_CONFIG" ] || error
   fi
-  butane --strict --pretty config.fcc > config.ign || error
+  butane --strict --pretty "$TMP_BUTANE_CONFIG" > "$TMP_IGNITION_CONFIG" || error
 
-  if [ ! -f script ]; then
-    write_combustion > script
-    [ -f script ] || error
+  if [ ! -f "$TMP_COMBUSTION_SCRIPT" ]; then
+    write_combustion > "$TMP_COMBUSTION_SCRIPT"
+    [ -f "$TMP_COMBUSTION_SCRIPT" ] || error
   fi
 
   sudo mkdir tmpmount/ignition || error
-  sudo cp -a config.ign tmpmount/ignition/ || error
+  sudo cp -a "$TMP_IGNITION_CONFIG" tmpmount/ignition/ || error
   sudo mkdir tmpmount/combustion || error
-  sudo cp -a script tmpmount/combustion/ || error
+  sudo cp -a "$TMP_COMBUSTION_SCRIPT" tmpmount/combustion/ || error
 
   ignition_volume_prep_cleanup
   mv "$CONF_IMG" "$OUTPUT_DIR/"
@@ -185,8 +188,8 @@ ignition_volume_prep_cleanup() {
     sudo losetup --detach $LOOPDEV
     LOOPDEV=""
   fi
-  if [ -f "config.ign" ]; then
-    rm config.ign
+  if [ -f ""$TMP_IGNITION_CONFIG"" ]; then
+    rm "$TMP_IGNITION_CONFIG"
   fi
 }
 
@@ -293,7 +296,7 @@ Usage:
   list of commands (CMD):
     artifacts         # downloads leapmicro release and creates a qcow2 image and ignite/combustion config volume (ignite.img)
                       # if config files are not found ("config" was not called before), it generates them first
-    config            # just creates ignite (ignite.fcc) and combustion (script) source config files (warning: overwrites present files)
+    config            # just creates ignite (ignite.fcc) and combustion ("$TMP_COMBUSTION_SCRIPT") source config files (warning: overwrites present files)
     create            # creates a VM backed up by the disks created by "artifacts", with VM_MEMORY memory and VM_CORES vcpus.
                       # if the artifacts folder is not found, calls "artifacts" first to generate the required disks
     delete [all]      # delete the generated artifacts; with 'all' deletes also config files
@@ -361,7 +364,7 @@ case ${1} in
   delete)
     rm -rf "$OUTPUT_DIR"
     if [ "${2}" = "all" ]; then
-      rm -rf config.fcc script
+      rm -rf "$TMP_BUTANE_CONFIG" "$TMP_COMBUSTION_SCRIPT"
     fi
     ;;
 
