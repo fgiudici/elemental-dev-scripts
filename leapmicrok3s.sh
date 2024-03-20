@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="0.2.2"
+VERSION="0.2.3"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
@@ -28,7 +28,7 @@ fi
 : ${VM_GRAPHICS:="spice"}
 : ${VM_AUTOCONSOLE:="text"}
 : ${INSTALL_K3S_EXEC:="server --write-kubeconfig-mode=644"}
-: ${INSTALL_K3S_VERSION:="v1.25.10+k3s1"}
+: ${INSTALL_K3S_VERSION:="v1.27.11+k3s1"}
 : ${RANCHER_PWD:="elemental"}
 : ${RANCHER_VER:=""}
 : ${RANCHER_REPO:="latest"}
@@ -312,10 +312,10 @@ Usage:
     INSTALL_K3S_VERSION # k3s installation version (default: 'v1.24.10+k3s1')
     CFG_HOSTNAME        # provisioned hostname (default: 'leapmicro')
     CFG_SSH_KEY         # the authorized ssh public key for remote access (default: not set)
-    CFG_ROOT_PWD        # the root password of the installed system (default: 'elemental')
-    RANCHER_PWD         # the admin password for rancher deployment (default: 'rancher4elemental')
+    CFG_ROOT_PWD        # the root password of the installed system (default: '$CFG_ROOT_PWD')
+    RANCHER_PWD         # the admin password for rancher deployment (default: '$RANCER_PWD')
     RANCHER_VER         # Rancher version to install (default picks up the latest)
-    RANCHER_REPO        # Rancher helm chart repo to pick rancher from (default 'lastest')
+    RANCHER_REPO        # Rancher helm chart repo to pick rancher from (default '$RANCHER_REPO')
     REMOTE_KVM          # the hostname/ip address of the KVM host if not using the local one (requires root access)
     VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
     VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '2')
@@ -324,6 +324,12 @@ Usage:
     VM_MEMORY           # amount of RAM assigned to the leapmicro K3s VM in MiB (default: '4096')
     VM_NETWORK          # virtual network (default: 'default')
     VM_STORE            # path where to put the disks for the leapmicro K3s VM (default: 'var/lib/libvirt/images')
+
+example:
+  VM_STORAGE=/data/images/ VM_NETWORK="net-name,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
+
+  leapmicrok3s.sh getkubeconf 192.168.122.2
+
 EOF
 
   exit 0
