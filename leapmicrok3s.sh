@@ -288,20 +288,52 @@ deploy_rancher() {
   echo "Rancher URL: https://${ip}.sslip.io"
 }
 
+deploy_elemental() {
+  local elem_ver="$1"
+
+  case ${elem_ver} in
+    Dev|dev|DEV)
+    CHART_NAME_OPERATOR="oci://registry.opensuse.org/isv/rancher/elemental/dev/charts/rancher/elemental-operator-chart"
+    [[ "$CHART_NAME_CRDS" == "$ELEMENTAL_OPERATOR_CRDS_CHART_NAME" ]] && \
+        CHART_NAME_CRDS="oci://registry.opensuse.org/isv/rancher/elemental/dev/charts/rancher/elemental-operator-crds-chart"
+    ;;
+    Staging|staging|STAGING)
+    CHART_NAME_OPERATOR="oci://registry.opensuse.org/isv/rancher/elemental/staging/charts/rancher/elemental-operator-chart"
+    [[ "$CHART_NAME_CRDS" == "$ELEMENTAL_OPERATOR_CRDS_CHART_NAME" ]] && \
+        CHART_NAME_CRDS="oci://registry.opensuse.org/isv/rancher/elemental/staging/charts/rancher/elemental-operator-crds-chart"
+    ;;
+    Stable|stable|STABLE)
+    CHART_NAME_OPERATOR="oci://registry.suse.com/rancher/elemental-operator-chart"
+    [[ "$CHART_NAME_CRDS" == "$ELEMENTAL_OPERATOR_CRDS_CHART_NAME" ]] && \
+        CHART_NAME_CRDS="oci://registry.suse.com/rancher/elemental-operator-crds-chart"
+    ;;
+    *)
+    echo "Elemental version '$elem_ver' not supported"
+    echo "Supported Elemental charts values are: 'stable', 'staging' or 'dev'"
+    exit 1
+    ;;
+  esac
+
+  echo "Installing $elem_ver Elemental charts"
+  helm upgrade --create-namespace -n cattle-elemental-system --install elemental-operator-crds $CHART_NAME_CRDS
+  helm upgrade --create-namespace -n cattle-elemental-system --install elemental-operator $CHART_NAME_OPERATOR
+}
+
 help() {
   cat << EOF
 Usage:
   ${0//*\/} CMD
 
   list of commands (CMD):
-    artifacts         # downloads leapmicro release and creates a qcow2 image and ignite/combustion config volume (ignite.img)
-                      # if config files are not found ("config" was not called before), it generates them first
-    config            # just creates ignite (ignite.fcc) and combustion ("$TMP_COMBUSTION_SCRIPT") source config files (warning: overwrites present files)
-    create            # creates a VM backed up by the disks created by "artifacts", with VM_MEMORY memory and VM_CORES vcpus.
-                      # if the artifacts folder is not found, calls "artifacts" first to generate the required disks
-    delete [all]      # delete the generated artifacts; with 'all' deletes also config files
-    getkubeconf <IP>  # get the kubeconfig file from a k3s host identified by the <IP> ip address
-    deployrancher     # install Rancher via Helm chart (requires helm binary already installed)
+    artifacts             # downloads leapmicro release and creates a qcow2 image and ignite/combustion config volume (ignite.img)
+                          # if config files are not found ("config" was not called before), it generates them first
+    config                # just creates ignite (ignite.fcc) and combustion ("$TMP_COMBUSTION_SCRIPT") source config files (warning: overwrites present files)
+    create                # creates a VM backed up by the disks created by "artifacts", with VM_MEMORY memory and VM_CORES vcpus.
+                          # if the artifacts folder is not found, calls "artifacts" first to generate the required disks
+    delete [all]          # delete the generated artifacts; with 'all' deletes also config files
+    getkubeconf <IP>      # get the kubeconfig file from a k3s host identified by the <IP> ip address
+    deployrancher         # install Rancher via Helm chart (requires helm binary already installed)
+    elemental <RELEASE>   # install Elemental charts from the RELEASE channel (RELEASE could be 'stable', 'staging' or 'dev')
 
   supported env vars:
     ENVC                # the environment config file to be imported if present (default: '\$HOME/.elemental/config)
@@ -386,6 +418,9 @@ case ${1} in
     deploy_rancher
     ;;
 
+  deployelemental|elemental|elem)
+    deploy_elemental ${2}
+    ;;
   *)
     help
     ;;
