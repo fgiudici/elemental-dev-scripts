@@ -309,7 +309,7 @@ Usage:
     MICRO_OS            # OS to install, 'leapmicro' or 'microOS' (default: 'leapmicro')
     SKIP_K3S            # boolean, skip k3s installation on 'true' (default: 'false')
     INSTALL_K3S_EXEC    # k3s installation options (default: 'server --write-kubeconfig-mode=644')
-    INSTALL_K3S_VERSION # k3s installation version (default: 'v1.24.10+k3s1')
+    INSTALL_K3S_VERSION # k3s installation version (default: '$INSTALL_K3S_VERSION')
     CFG_HOSTNAME        # provisioned hostname (default: 'leapmicro')
     CFG_SSH_KEY         # the authorized ssh public key for remote access (default: not set)
     CFG_ROOT_PWD        # the root password of the installed system (default: '$CFG_ROOT_PWD')
