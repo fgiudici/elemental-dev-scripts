@@ -1,5 +1,7 @@
 #!/bin/bash
 
+VERSION="0.3.0"
+
 EO_NS=fleet-default
 EO_CRDS="managedosimages.elemental.cattle.io \
          machineinventories.elemental.cattle.io \
@@ -25,9 +27,9 @@ case ${2} in
 
 esac
 
-: ${DEFAULT_CLUSTER:="v1.25.6+k3s1"}
+: ${DEFAULT_CLUSTER:="v1.27.11+k3s1"}
 : ${DEFAULT_MACHINE_DISK:="/dev/vda"}
-: ${DEFAULT_ROOT_PWD:="password"}
+: ${DEFAULT_ROOT_PWD:="elemental"}
 
 : ${BASE_NAME:="test"}
 : ${CLUSTER_NAME:=$BASE_NAME}
@@ -35,11 +37,13 @@ esac
 : ${LABEL_VAL:="${BASE_NAME}"}
 : ${N_NODES:=1}
 
-: ${BASE_ISO:="Dev"}
+: ${BASE_ISO:="Stable"}
 
-if [[ "Dev Stable Staging" =~ (^|[[:space:]])"$BASE_ISO"($|[[:space:]]) ]]; then
-  BASE_ISO="https://download.opensuse.org/repositories/isv:/Rancher:/Elemental:/${BASE_ISO}:/Teal53/media/iso/elemental-teal.x86_64.iso"
-fi
+case $BASE_ISO in
+  stable|Stable)
+    BASE_ISO=registry.suse.com/suse/sle-micro-iso/5.5:latest
+    ;;
+esac
 
 get_resource_list() {
     local res="$1"
@@ -67,7 +71,7 @@ EOF
     cat << EOF
       registration:
         emulate-tpm: true
-        emulate-tpm-seed: -1
+        emulated-tpm-seed: -1
 EOF
 
   elif [ "$REGAUTH" != "" ]; then
@@ -83,38 +87,14 @@ EOF
       users:
         - name: root
           passwd: $DEFAULT_ROOT_PWD
+        - name: elemental
+          passwd: elemental
   machineInventoryLabels:
     $LABEL_KEY: $LABEL_VAL
     manufacturer: "\${System Information/Manufacturer}"
     productName: "\${System Information/Product Name}"
     serialNumber: "\${System Information/Serial Number}"
     machineUUID: "\${System Information/UUID}"
-EOF
-}
-
-machine_registration_no_tpm() {
-  cat << EOF
-apiVersion: elemental.cattle.io/v1beta1
-kind: MachineRegistration
-metadata:
-  name: $BASE_NAME
-  namespace: fleet-default
-spec:
-  config:
-    elemental:
-      registration:
-        emulate-tpm: true
-        emulated-tpm-seed: -1
-      install:
-        device: $DEFAULT_MACHINE_DISK
-        reboot: false
-        debug: true
-    cloud-config:
-      users:
-        - name: root
-          passwd: $DEFAULT_ROOT_PWD
-  machineInventoryLabels:
-    $LABEL_KEY: $LABEL_VAL
 EOF
 }
 
@@ -165,9 +145,11 @@ metadata:
   namespace: fleet-default
 spec:
   baseImage: $BASE_ISO
+  cleanupAfterMinutes: 60
   registrationRef:
     name: $BASE_NAME
     namespace: fleet-default
+  type: iso
 EOF
 }
 
