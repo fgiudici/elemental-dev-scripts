@@ -1,13 +1,19 @@
 #!/bin/bash
 
+VERSION="0.3.0"
 ARGS="$1"
 : ${EO_SRC:="${GOPATH}/src/github.com/rancher/elemental-operator"}
-: ${EO_REPO:="quay.io/$USER/elemental-operator"}
 : ${EO_NAME:="elemental-operator"}
-: ${SEEDIMG_REPO:="quay.io/$USER/elemental-seedimage"}
+: ${EO_NAME_CRDS:="elemental-operator-crds"}
+: ${REGISTRY:="quay.io/$USER"}
+: ${OPERATOR_REPO:="elemental-operator"}
+: ${SEEDIMG_REPO:="elemental-seedimage"}
+: ${EO_OS_CHANNEL:="registry.opensuse.org/isv/rancher/elemental/dev/containers/rancher/elemental-channel"}
 EO_NS="cattle-elemental-system"
 CHART_NAME=""
+CHART_NAME_CRDS=""
 
+export REGISTRY_URL=$REGISTRY
 
 fail_err() {
   msg="$1"
@@ -21,8 +27,9 @@ get_last_tag() {
 }
 
 get_chart_name() {
+  local local_ln=${1:-'1'}
   pushd ${EO_SRC} > /dev/null 2>&1
-  ls -t build/*.tgz | head -n 1
+  ls -t build/*.tgz | sed -n "$local_ln p"
   popd > /dev/null 2>&1
 }
 
@@ -33,34 +40,39 @@ is_operator_installed() {
 build_docker() {
   echo "INFO: build elemental-operator docker image"
   pushd $EO_SRC
-  REPO=$EO_REPO make build-docker-operator
+  REPO=$OPERATOR_REPO make build-docker-operator
   [ "$?" != "0" ] && fail_err "docker build failed"
   TAG=$(get_last_tag)
-  docker push ${EO_REPO}:${TAG}
-  [ "$?" != "0" ] && fail_err "image push to $EO_REPO failed"
+  docker push ${REGISTRY_URL}/${OPERATOR_REPO}:${TAG}
+  [ "$?" != "0" ] && fail_err "image push to $OPERATOR_REPO failed"
 
   echo "INFO: build elemental-seedimage docker image"
   REPO_SEEDIMAGE=$SEEDIMG_REPO make build-docker-seedimage-builder
   [ "$?" != "0" ] && fail_err "docker seedimage build failed"
   # TAG is the same of elemental-operator, so directly use that
-  docker push ${SEEDIMG_REPO}:${TAG}
+  docker push ${REGISTRY_URL}/${SEEDIMG_REPO}:${TAG}
   [ "$?" != "0" ] && fail_err "image push to $SEEDIMG_REPO failed"
 
-  REPO=$EO_REPO REPO_SEEDIMAGE=$SEEDIMG_REPO make chart
+  REPO=$OPERATOR_REPO REPO_SEEDIMAGE=$SEEDIMG_REPO make chart
   [ "$?" != "0" ] && fail_err "error building chart"
 
   CHART_NAME=$(get_chart_name)
+  CHART_NAME_CRDS=$(get_chart_name "2")
   popd
 }
 
 install_helm_chart() {
-  echo "Install $CHART_NAME"
   pushd ${EO_SRC}
+  echo -e "\n*** Install $CHART_NAME_CRDS"
   set -x
   # HELM custom value install:
-  # helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} --set image.repository=${EO_REPO} --set seedimage.repository=${SEEDIMG_REPO} --set debug=true
+  # helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} --set image.repository=${OPERATOR_REPO} --set seedimage.repository=${SEEDIMG_REPO} --set debug=true
   # our generated helm chart has our custom values already set
-  helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} --set debug=true --set channel.repository="registry.opensuse.org/isv/rancher/elemental/dev/teal53/15.4/rancher/elemental-teal-channel/5.3" --set channel.tag=latest
+  helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME_CRDS} ${CHART_NAME_CRDS}
+  set +x
+  echo -e "\n*** Install $CHART_NAME"
+  set -x
+  helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} --set debug=true --set channel.image="$EO_OS_CHANNEL" --set channel.tag=latest
   set +x
   popd
 }
@@ -77,15 +89,16 @@ Usage:
   - the sources for the Elemental Operator are available at the dir pointed by EO_SRC
   - all the required packages to build the Elemental Operator are already installed
   - docker is available
-  - user has write access to a container registry pointed by EO_REPO
+  - user has write access to a container registry pointed by OPERATOR_REPO
   - kubectl is pointing to a Rancher Cluster
 
   list of options:
     --uninstall # will first uninstall the current elemental-operator chart (otherwise it will be upgraded)
   supported evn vars:
-    EO_SRC       # location of the github.com/rancher/elemental-operator sources (current: $EO_SRC)
-    EO_REPO      # container registry where the elemental-operator container will be uploaded (current: $EO_REPO)
-    SEEDIMG_REPO # container registry where the elemental seedimage builder container will be uploaded (current: $SEEDIMG_REPO)
+    EO_SRC        # location of the github.com/rancher/elemental-operator sources (current: $EO_SRC)
+    REGISTRY      # container registry of the OPERATOR_REPO and SEEDIMG_REPO repositories (current: $REGISTRY)
+    OPERATOR_REPO # container repo where the elemental-operator container will be uploaded (current: $OPERATOR_REPO)
+    SEEDIMG_REPO  # container repo where the elemental seedimage builder container will be uploaded (current: $SEEDIMG_REPO)
 EOF
 
 exit 0
@@ -103,5 +116,6 @@ fi
 build_docker
 install_helm_chart
 
+unset REGISTRY_URL
 echo elemental-operator helm chart installed
 
