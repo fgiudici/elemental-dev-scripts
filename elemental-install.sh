@@ -72,7 +72,9 @@ install_helm_chart() {
   set +x
   echo -e "\n*** Install $CHART_NAME"
   set -x
-  helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} --set debug=true --set channel.image="$EO_OS_CHANNEL" --set channel.tag=latest
+  helm upgrade --create-namespace -n ${EO_NS} --install ${EO_NAME} ${CHART_NAME} \
+	  --set debug=true --set channel.image="$EO_OS_CHANNEL" --set channel.tag=latest \
+	  --set image.imagePullPolicy=Always --set seedImage.imagePullPolicy=Always
   set +x
   popd
 }
