@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.3.0"
+VERSION="0.3.1"
 ARGS="$1"
 : ${EO_SRC:="${GOPATH}/src/github.com/rancher/elemental-operator"}
 : ${EO_NAME:="elemental-operator"}

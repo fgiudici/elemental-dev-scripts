@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.3.0"
+VERSION="0.3.1"
 
 EO_NS=fleet-default
 EO_CRDS="managedosimages.elemental.cattle.io \

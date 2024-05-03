@@ -1,5 +1,6 @@
 #!/bin/bash
 
+VERSION="0.3.1"
 # elemental Cluster Deployment
 # example:
 # VM_PREFIX="server-" VM_NETWORK=demo NUMOFVMS=2 VM_CORES=2 VM_MEMORY=8192 elemental-vms.sh ./elemental-fire-2023-07-24T14\:44\:54Z.iso
