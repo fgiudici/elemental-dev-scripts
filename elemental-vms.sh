@@ -79,7 +79,7 @@ for vm in `seq 1 $NUMOFVMS`; do
   vm_name="${VM_PREFIX}${vm}"
   uuid=$(uuidgen) || error "uuidgen failed"
   echo "Kick off creation of NODE ${vm_name} - ${uuid}"
-  virt-install $remote_option \
+  sudo virt-install $remote_option \
     -n "${vm_name}-${uuid}" \
     --metadata title="${VM_TITLE} ${vm_name} ${uuid}" \
     --osinfo=${VM_OSINFO} \
