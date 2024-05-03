@@ -13,6 +13,14 @@ EO_CRDS="managedosimages.elemental.cattle.io \
          machineinventoryselectortemplates.elemental.cattle.io \
          managedosimages.elemental.cattle.io"
 
+EO_CRDS_DEL="managedosimages.elemental.cattle.io \
+             machineinventories.elemental.cattle.io \
+             machineregistrations.elemental.cattle.io \
+             seedimages.elemental.cattle.io \
+             machineinventoryselectors.elemental.cattle.io \
+             machineinventoryselectortemplates.elemental.cattle.io \
+             managedosimages.elemental.cattle.io"
+
 case ${2} in
 
   --*)
@@ -214,7 +222,7 @@ case ${1} in
     ;;
 
   delete)
-    for res in $EO_CRDS cluster; do
+    for res in $EO_CRDS_DEL cluster; do
         echo "- Delete $res"
         for i in `get_resource_list "$res"`; do
             echo "  . delete $i"
