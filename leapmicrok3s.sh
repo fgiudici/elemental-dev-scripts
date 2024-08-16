@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="0.3.1"
+VERSION="0.4.0-devel"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
@@ -23,7 +23,7 @@ fi
 : ${VM_STORE:="/var/lib/libvirt/images"}
 : ${VM_DISKSIZE:="30"}
 : ${VM_MEMORY:="4096"}
-: ${VM_NETWORK:="default"}
+: ${VM_NETWORK:="network=default"}
 : ${VM_CORES:="2"}
 : ${VM_GRAPHICS:="spice"}
 : ${VM_AUTOCONSOLE:="text"}
@@ -32,12 +32,14 @@ fi
 : ${RANCHER_PWD:="elemental"}
 : ${RANCHER_VER:=""}
 : ${RANCHER_REPO:="latest"}
+: ${RANCHER_HOSTNAME:=""}
 : ${REMOTE_KVM:=""}
 
 case "$MICRO_OS" in
   leapmicro)
-    DISTRO_NAME="openSUSE-Leap-Micro.x86_64-Default"
-    DISTRO_URL_BASE="https://download.opensuse.org/distribution/leap-micro/5.4/appliances/"
+    DISTRO_NAME="openSUSE-Leap-Micro.x86_64-Default-qcow"
+    DISTRO_URL_BASE="https://download.opensuse.org/distribution/leap-micro/6.0/appliances/"
+    DOWNLOAD_QCOW=true
     ;;
   microOS|microos)
     DISTRO_NAME="openSUSE-MicroOS.x86_64-ContainerHost-kvm-and-xen"
@@ -235,11 +237,11 @@ create_vm() {
   fi
 
   sudo virt-install $remote_option \
-    -n "${MICRO_OS}-$uuid" --osinfo=slem5.3 --memory="$VM_MEMORY" --vcpus="$VM_CORES" \
+    -n "${MICRO_OS}-$uuid" --osinfo=slem5.4 --memory="$VM_MEMORY" --vcpus="$VM_CORES" \
     --disk path="${VM_STORE}/${vmdisk}",bus=virtio --import \
     --disk path="${VM_STORE}/${vmconf}" \
     --graphics "$VM_GRAPHICS" \
-    --network network="$VM_NETWORK" \
+    --network "$VM_NETWORK" \
     --autoconsole "$VM_AUTOCONSOLE"
 }
 
@@ -276,11 +278,24 @@ deploy_rancher() {
   echo "* deploy rancher"
   # For Kubernetes v1.25 or later, set global.cattle.psp.enabled to false.
   local rancherOpts="--namespace cattle-system"
-  [ -n "$RANCHER_VER" ] && rancherOpts="$rancherOpts --version $RANCHER_VER"
+  if [ -n "$RANCHER_VER" ]; then
+    case $RANCHER_VER in
+      "Dev"|"dev"|"Devel"|"devel")
+        rancherOpts="$rancherOpts --devel"
+        ;;
+      *)
+        rancherOpts="$rancherOpts --version $RANCHER_VER"
+	;;
+    esac
+  fi
+
+  if [ "$RANCHER_HOSTNAME" = "" ]; then
+    RANCHER_HOSTNAME="${ip}.sslip.io"
+  fi
 
   helm install rancher rancher-${RANCHER_REPO}/rancher \
   $rancherOpts \
-  --set hostname=${ip}.sslip.io \
+  --set hostname=${RANCHER_HOSTNAME} \
   --set replicas=1 \
   --set global.cattle.psp.enabled=false \
   --set bootstrapPassword="$RANCHER_PWD" || error
@@ -342,23 +357,25 @@ Usage:
     SKIP_K3S            # boolean, skip k3s installation on 'true' (default: 'false')
     INSTALL_K3S_EXEC    # k3s installation options (default: 'server --write-kubeconfig-mode=644')
     INSTALL_K3S_VERSION # k3s installation version (default: '$INSTALL_K3S_VERSION')
-    CFG_HOSTNAME        # provisioned hostname (default: 'leapmicro')
-    CFG_SSH_KEY         # the authorized ssh public key for remote access (default: not set)
+    CFG_HOSTNAME        # provisioned hostname (default: '$CFG_HOSTNAME')
+    CFG_SSH_KEY         # the authorized ssh public key for remote access
     CFG_ROOT_PWD        # the root password of the installed system (default: '$CFG_ROOT_PWD')
     RANCHER_PWD         # the admin password for rancher deployment (default: '$RANCER_PWD')
-    RANCHER_VER         # Rancher version to install (default picks up the latest)
+    RANCHER_VER         # Rancher version to install (default picks up the latest stable)
     RANCHER_REPO        # Rancher helm chart repo to pick rancher from (default '$RANCHER_REPO')
+    RANCHER_HOSTNAME    # Rancher hostname (default '\$IP.sslip.io')
     REMOTE_KVM          # the hostname/ip address of the KVM host if not using the local one (requires root access)
-    VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: text)
-    VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '2')
-    VM_DISKSIZE         # desired storage size in GB of the leapmicro K3s VM (default: '30')
-    VM_GRAPHICS         # graphical display configuration for the leapmicro K3s VM (default: 'spice')
-    VM_MEMORY           # amount of RAM assigned to the leapmicro K3s VM in MiB (default: '4096')
-    VM_NETWORK          # virtual network (default: 'default')
-    VM_STORE            # path where to put the disks for the leapmicro K3s VM (default: 'var/lib/libvirt/images')
+    VM_AUTOCONSOLE      # auto start console for the leapmicro K3s VM (default: '$VM_AUTOCONSOLE')
+    VM_CORES            # number of vcpus assigned to the leapmicro K3s VM (default: '$VM_CORES')
+    VM_DISKSIZE         # desired storage size in GB of the leapmicro K3s VM (default: '$VM_DISKSIZE')
+    VM_GRAPHICS         # graphical display configuration for the leapmicro K3s VM (default: '$VM_GRAPHICS')
+    VM_MEMORY           # amount of RAM assigned to the leapmicro K3s VM in MiB (default: '$VM_MEMORY')
+    VM_NETWORK          # virtual network (default: '$VM_NETWORK')
+    VM_STORE            # path where to put the disks for the leapmicro K3s VM (default: '$VM_STORE')
 
 example:
-  VM_STORAGE=/data/images/ VM_NETWORK="net-name,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
+  VM_STORAGE=/data/images/ VM_NETWORK="network=\$NETNAME,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
+  VM_STORAGE=/data/images/ VM_NETWORK="bridge=br-dmz,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
 
   leapmicrok3s.sh getkubeconf 192.168.122.2
 
