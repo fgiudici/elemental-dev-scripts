@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.3.1"
+VERSION="0.4.1-dev"
 ARGS="$1"
 : ${EO_SRC:="${GOPATH}/src/github.com/rancher/elemental-operator"}
 : ${EO_NAME:="elemental-operator"}
@@ -53,7 +53,7 @@ build_docker() {
   docker push ${REGISTRY_URL}/${SEEDIMG_REPO}:${TAG}
   [ "$?" != "0" ] && fail_err "image push to $SEEDIMG_REPO failed"
 
-  REPO=$OPERATOR_REPO REPO_SEEDIMAGE=$SEEDIMG_REPO make chart
+  REPO=$OPERATOR_REPO REPO_SEEDIMAGE=$SEEDIMG_REPO LOCAL_BUILD=true make chart
   [ "$?" != "0" ] && fail_err "error building chart"
 
   CHART_NAME=$(get_chart_name)
