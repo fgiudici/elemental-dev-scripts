@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="0.4.0-devel"
+VERSION="0.4.1-devel"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
@@ -268,12 +268,12 @@ deploy_rancher() {
   echo "* deploy cert-manager"
   kubectl create namespace cattle-system
 
-  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.crds.yaml || error
+  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.crds.yaml || error
 
   helm install cert-manager jetstack/cert-manager \
     --namespace cert-manager \
     --create-namespace \
-    --version v1.11.0 || error
+    --version v1.13.1 || error
 
   echo "* deploy rancher"
   # For Kubernetes v1.25 or later, set global.cattle.psp.enabled to false.
@@ -297,10 +297,9 @@ deploy_rancher() {
   $rancherOpts \
   --set hostname=${RANCHER_HOSTNAME} \
   --set replicas=1 \
-  --set global.cattle.psp.enabled=false \
   --set bootstrapPassword="$RANCHER_PWD" || error
 
-  echo "Rancher URL: https://${ip}.sslip.io"
+  echo "Rancher URL: https://$RANCHER_HOSTNAME"
 }
 
 deploy_elemental() {
