@@ -167,16 +167,12 @@ ignition_volume_prep() {
   mkdir tmpmount
   sudo mount $LOOPDEV tmpmount
 
-  if [ ! -f "$TMP_BUTANE_CONFIG" ]; then
-    write_ignition > "$TMP_BUTANE_CONFIG"
-    [ -f "$TMP_BUTANE_CONFIG" ] || error
-  fi
+  write_ignition > "$TMP_BUTANE_CONFIG"
+  [ -f "$TMP_BUTANE_CONFIG" ] || error
   butane --strict --pretty "$TMP_BUTANE_CONFIG" > "$TMP_IGNITION_CONFIG" || error
 
-  if [ ! -f "$TMP_COMBUSTION_SCRIPT" ]; then
-    write_combustion > "$TMP_COMBUSTION_SCRIPT"
-    [ -f "$TMP_COMBUSTION_SCRIPT" ] || error
-  fi
+  write_combustion > "$TMP_COMBUSTION_SCRIPT"
+  [ -f "$TMP_COMBUSTION_SCRIPT" ] || error
 
   sudo mkdir tmpmount/ignition || error
   sudo cp -a "$TMP_IGNITION_CONFIG" tmpmount/ignition/ || error
