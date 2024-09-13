@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="0.4.1-devel"
+VERSION="0.4.1.1-devel"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
@@ -18,6 +18,8 @@ fi
 : ${MICRO_OS:=leapmicro}
 : ${SKIP_K3S:=false}
 : ${CFG_ROOT_PWD:="elemental"}
+: ${CFG_USER_NAME:="user"}
+: ${CFG_USER_PWD:="elemental"}
 : ${CFG_SSH_KEY:=""}
 : ${CFG_HOSTNAME:="$MICRO_OS"}
 : ${VM_STORE:="/var/lib/libvirt/images"}
@@ -28,7 +30,7 @@ fi
 : ${VM_GRAPHICS:="spice"}
 : ${VM_AUTOCONSOLE:="text"}
 : ${INSTALL_K3S_EXEC:="server --write-kubeconfig-mode=644"}
-: ${INSTALL_K3S_VERSION:="v1.27.11+k3s1"}
+: ${INSTALL_K3S_VERSION:="v1.28.13+k3s1"}
 : ${RANCHER_PWD:="elemental"}
 : ${RANCHER_VER:=""}
 : ${RANCHER_REPO:="latest"}
@@ -69,6 +71,7 @@ error() {
 
 write_ignition() {
   ROOT_HASHED_PWD=$(openssl passwd -6 "$CFG_ROOT_PWD") || error
+  USER_HASHED_PWD=$(openssl passwd -6 "$CFG_USER_PWD") || error
 
   cat << EOF
 variant: fcos
@@ -78,6 +81,9 @@ passwd:
     users:
       - name: root
         password_hash: "$ROOT_HASHED_PWD"
+      - name: "$CFG_USER_NAME"
+        home_dir: "/var/${CFG_USER_NAME}"
+        password_hash: "$USER_HASHED_PWD"
 storage:
   files:
     - path: /etc/hostname
