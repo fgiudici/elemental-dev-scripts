@@ -379,8 +379,8 @@ Usage:
     VM_STORE            # path where to put the disks for the leapmicro K3s VM (default: '$VM_STORE')
 
 example:
-  VM_STORAGE=/data/images/ VM_NETWORK="network=\$NETNAME,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
-  VM_STORAGE=/data/images/ VM_NETWORK="bridge=br-dmz,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
+  VM_STORE=/data/images/ VM_NETWORK="network=\$NETNAME,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
+  VM_STORE=/data/images/ VM_NETWORK="bridge=br-dmz,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
 
   leapmicrok3s.sh getkubeconf 192.168.122.2
 
