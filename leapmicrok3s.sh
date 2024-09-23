@@ -244,7 +244,7 @@ create_vm() {
     --disk path="${VM_STORE}/${vmconf}" \
     --graphics "$VM_GRAPHICS" \
     --network "$VM_NETWORK" \
-    --autoconsole "$VM_AUTOCONSOLE"
+    --autoconsole "$VM_AUTOCONSOLE" $VM_CUSTOMOPTION
 }
 
 get_kubeconfig() {
@@ -272,7 +272,7 @@ deploy_rancher() {
 
   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.crds.yaml || error
 
-  helm install cert-manager jetstack/cert-manager \
+  helm upgrade --install cert-manager jetstack/cert-manager \
     --namespace cert-manager \
     --create-namespace \
     --version v1.13.1 || error
@@ -373,10 +373,12 @@ Usage:
     VM_MEMORY           # amount of RAM assigned to the leapmicro K3s VM in MiB (default: '$VM_MEMORY')
     VM_NETWORK          # virtual network (default: '$VM_NETWORK')
     VM_STORE            # path where to put the disks for the leapmicro K3s VM (default: '$VM_STORE')
+    VM_CUSTOMOPTION     # custom option appended to 'virt-install'
 
 example:
   VM_STORE=/data/images/ VM_NETWORK="network=\$NETNAME,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
   VM_STORE=/data/images/ VM_NETWORK="bridge=br-dmz,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create
+  VM_STORE=/data/images/ VM_NETWORK="bridge=br-dmz,mac=52:54:00:00:01:fe" VM_MEMORY=8192 VM_CORES=4 ./leapmicrok3s.sh create VM_CUSTOMOPTION="--network bridge=br-lan,mac=52:54:00:10:22"
 
   leapmicrok3s.sh getkubeconf 192.168.122.2
 
