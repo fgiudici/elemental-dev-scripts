@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.3.1"
+VERSION="v4.0.0"
 
 EO_NS=fleet-default
 EO_CRDS="managedosimages.elemental.cattle.io \
@@ -35,7 +35,7 @@ case ${2} in
 
 esac
 
-: ${DEFAULT_CLUSTER:="v1.27.11+k3s1"}
+: ${DEFAULT_CLUSTER:="v1.30.12+k3s1"}
 : ${DEFAULT_MACHINE_DISK:="/dev/vda"}
 : ${DEFAULT_ROOT_PWD:="elemental"}
 
@@ -181,7 +181,7 @@ Usage:
     BASE-NAME   # the base name is used to generate resources: it will be the name of the MachineRegistration and will be used to derive
                 # the names of other resources and of generated files. It is optional, by default it is set to "test".
   supported env vars:
-    DEFAULT_CLUSTER       # cluster to be provisioned (default: "v1.25.6+k3s1")
+    DEFAULT_CLUSTER       # cluster to be provisioned (default: "$DEFAULT_CLUSTER")
     DEFAULT_MACHINE_DISK  # node disk device on which elemental will be installed (default: "/dev/vda")
     DEFAULT_ROOT_PWD      # root password of the deployed elemental nodes (default: "password"}
     BASE_NAME             # can be use to set the BASE-NAME and avoid passing it on the command line (see BASE-NAME, default: "test")

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="0.3.0"
+VERSION="v4.0.0"
 
 # you can set your custom vars permanently in $HOME/.elemental/config
 : ${ENVC:="$HOME/.elemental/config"}

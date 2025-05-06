@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION="0.4.1.1-devel"
+VERSION="v4.0.0"
 OUTPUT_DIR="artifacts"
 CONF_IMG="ignition.img"
 DOWNLOAD_QCOW=false
@@ -30,7 +30,8 @@ fi
 : ${VM_GRAPHICS:="spice"}
 : ${VM_AUTOCONSOLE:="text"}
 : ${INSTALL_K3S_EXEC:="server --write-kubeconfig-mode=644"}
-: ${INSTALL_K3S_VERSION:="v1.28.13+k3s1"}
+: ${INSTALL_K3S_VERSION:="v1.30.12+k3s1"}
+: ${CERTMAN_VERSION:="v1.17.2"}
 : ${RANCHER_PWD:="elemental"}
 : ${RANCHER_VER:=""}
 : ${RANCHER_REPO:="latest"}
@@ -270,7 +271,7 @@ deploy_rancher() {
   echo "* deploy cert-manager"
   kubectl create namespace cattle-system
 
-  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.1/cert-manager.crds.yaml || error
+  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/${CERTMAN_VERSION}/cert-manager.crds.yaml || error
 
   helm upgrade --install cert-manager jetstack/cert-manager \
     --namespace cert-manager \
@@ -361,6 +362,7 @@ Usage:
     CFG_HOSTNAME        # provisioned hostname (default: '$CFG_HOSTNAME')
     CFG_SSH_KEY         # the authorized ssh public key for remote access
     CFG_ROOT_PWD        # the root password of the installed system (default: '$CFG_ROOT_PWD')
+    CERTMAN_VERSION     # cert-manager version to install (default: '$CERTMAN_VERSION')
     RANCHER_PWD         # the admin password for rancher deployment (default: '$RANCER_PWD')
     RANCHER_VER         # Rancher version to install (default picks up the latest stable)
     RANCHER_REPO        # Rancher helm chart repo to pick rancher from (default '$RANCHER_REPO')

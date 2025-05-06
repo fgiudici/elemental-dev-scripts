@@ -4,3 +4,4 @@ VERSION?=$(shell echo $(GIT_TAG) | sed 's/[a-z]*\([0-9]\(\.[0-9]\)\{0,2\}\).*/\1
 version:
 	sed -i 's/^VERSION=.*/VERSION="$(VERSION)"/' elemental-*
 	sed -i 's/^VERSION=.*/VERSION="$(VERSION)"/' leapmicrok3s.sh
+	sed -i 's/^VERSION=.*/VERSION="$(VERSION)"/' ubuntu.sh

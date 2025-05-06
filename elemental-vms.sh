@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.3.1"
+VERSION="v4.0.0"
 # elemental Cluster Deployment
 # example:
 # VM_PREFIX="server-" VM_NETWORK=demo NUMOFVMS=2 VM_CORES=2 VM_MEMORY=8192 elemental-vms.sh ./elemental-fire-2023-07-24T14\:44\:54Z.iso
@@ -48,7 +48,7 @@ Usage:
     VM_STORE            # path where to put the disks for the created VMs (default: 'var/lib/libvirt/images')
 
 example:
-  VM_TITLE="[rancher]" VM_PREFIX="elemental-2.1.0-01" VM_NETWORK="net-name,mac=52:54:00:00:01:10" NUMOFVMS=1 VM_CORES=2 VM_MEMORY=8192 elemental-vms.sh ./elemental-fire-2024-02-07T08\:59\:27Z.iso
+  VM_TITLE="[rancher]" VM_PREFIX="elemental-node" VM_NETWORK="net-name,mac=52:54:00:00:01:10" NUMOFVMS=1 VM_CORES=2 VM_MEMORY=8192 elemental-vms.sh ./elemental.iso
 EOF
 
 }
